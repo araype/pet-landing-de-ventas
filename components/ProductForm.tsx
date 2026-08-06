@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
-import { CATEGORIES } from "@/lib/schema";
+import { useActionState, useState } from "react";
+import { BADGES, CATEGORIES } from "@/lib/schema";
 import type { FormState } from "@/app/admin/actions";
+import { BADGE_LABELS } from "./badge-labels";
 
 const CATEGORY_LABELS: Record<string, string> = {
   juguetes: "Juguetes",
@@ -17,10 +18,11 @@ type Defaults = {
   category: string;
   colors: string;
   stockQty: number;
-  priceMin: number;
-  priceMax: number;
+  price: number;
   description: string;
   isPublished: boolean;
+  badge: string | null;
+  badgeLabel: string | null;
 };
 
 const emptyDefaults: Defaults = {
@@ -28,10 +30,11 @@ const emptyDefaults: Defaults = {
   category: "juguetes",
   colors: "",
   stockQty: 1,
-  priceMin: 0,
-  priceMax: 0,
+  price: 0,
   description: "",
   isPublished: true,
+  badge: null,
+  badgeLabel: null,
 };
 
 export default function ProductForm({
@@ -50,6 +53,7 @@ export default function ProductForm({
     {}
   );
   const values = { ...emptyDefaults, ...defaultValues };
+  const [badge, setBadge] = useState(values.badge ?? "");
 
   return (
     <form action={formAction} className="space-y-5">
@@ -101,31 +105,42 @@ export default function ProductForm({
           />
         </Field>
 
-        <Field label="Precio mínimo (S/)" htmlFor="priceMin">
+        <Field label="Precio (S/)" htmlFor="price">
           <input
-            id="priceMin"
-            name="priceMin"
+            id="price"
+            name="price"
             type="number"
             min={0}
             required
-            defaultValue={values.priceMin}
+            defaultValue={values.price}
             className={inputClass}
           />
         </Field>
 
-        <Field label="Precio máximo (S/)" htmlFor="priceMax">
-          <input
-            id="priceMax"
-            name="priceMax"
-            type="number"
-            min={0}
-            required
-            defaultValue={values.priceMax}
+        <Field label="Etiqueta" htmlFor="badge">
+          <select
+            id="badge"
+            name="badge"
+            value={badge}
+            onChange={(e) => setBadge(e.target.value)}
             className={inputClass}
-          />
-          <p className="mt-1 text-xs text-[var(--ink)]/60">
-            Si el precio no varía, pon el mismo valor en mínimo y máximo.
-          </p>
+          >
+            <option value="">Ninguna</option>
+            {BADGES.map((b) => (
+              <option key={b} value={b}>
+                {BADGE_LABELS[b]}
+              </option>
+            ))}
+          </select>
+          {badge === "otro" && (
+            <input
+              name="badgeLabel"
+              placeholder="Texto de la etiqueta"
+              required
+              defaultValue={values.badgeLabel ?? ""}
+              className={`${inputClass} mt-2`}
+            />
+          )}
         </Field>
       </div>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllProductsForAdmin } from "@/lib/data";
-import ProductsTable from "./ProductsTable";
+import ProductsGrid from "./ProductsGrid";
 
 export default async function AdminProductsPage() {
   const productList = await getAllProductsForAdmin();
@@ -24,7 +24,7 @@ export default async function AdminProductsPage() {
           primero.
         </p>
       ) : (
-        <ProductsTable products={productList} />
+        <ProductsGrid products={productList} />
       )}
     </div>
   );

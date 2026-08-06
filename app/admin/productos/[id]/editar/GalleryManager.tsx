@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import Image from "next/image";
 import type { ProductImage } from "@/lib/schema";
-import { deleteImageAction, moveImageAction } from "../../../actions";
+import { deleteImageAction, moveImageAction, setImageFitAction } from "../../../actions";
 
 export default function GalleryManager({
   productId,
@@ -29,16 +29,35 @@ export default function GalleryManager({
           key={image.id}
           className="overflow-hidden rounded-xl border border-[var(--ink)]/16 bg-white"
         >
-          <div className="aspect-square overflow-hidden">
+          <div className="aspect-square overflow-hidden bg-[var(--paper-2)]">
             <Image
               src={image.url}
               alt=""
               width={200}
               height={200}
-              className="h-full w-full object-cover"
+              className={`h-full w-full ${
+                image.fit === "contain" ? "object-contain" : "object-cover"
+              }`}
             />
           </div>
-          <div className="flex items-center justify-between gap-1 p-2 text-xs">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+              startTransition(() =>
+                setImageFitAction(
+                  image.id,
+                  productId,
+                  image.fit === "contain" ? "cover" : "contain"
+                )
+              )
+            }
+            className="block w-full border-t border-[var(--ink)]/10 px-2 py-1.5 text-center text-[11px] text-[var(--teal-deep)] hover:bg-[var(--paper-2)] disabled:opacity-40"
+            title="Cambia cómo se encuadra la foto dentro del recuadro"
+          >
+            {image.fit === "contain" ? "Encuadre: foto completa ⤢" : "Encuadre: llenar recuadro ⤡"}
+          </button>
+          <div className="flex items-center justify-between gap-1 border-t border-[var(--ink)]/10 p-2 text-xs">
             <button
               type="button"
               disabled={isPending || index === 0}

@@ -5,7 +5,15 @@ import { redirect } from "next/navigation";
 import { asc, eq, gt, lt } from "drizzle-orm";
 import { put, del } from "@vercel/blob";
 import { db } from "@/lib/db";
-import { CATEGORIES, productImages, products } from "@/lib/schema";
+import {
+  BADGES,
+  CATEGORIES,
+  IMAGE_FITS,
+  productImages,
+  products,
+  type Badge,
+  type ImageFit,
+} from "@/lib/schema";
 import { uniqueSlug } from "@/lib/data";
 import {
   checkAdminPassword,
@@ -40,26 +48,39 @@ function parseProductFields(formData: FormData) {
   const category = String(formData.get("category") ?? "");
   const colors = String(formData.get("colors") ?? "").trim();
   const stockQty = Number(formData.get("stockQty") ?? 0);
-  const priceMin = Number(formData.get("priceMin") ?? 0);
-  const priceMax = Number(formData.get("priceMax") ?? 0);
+  const price = Number(formData.get("price") ?? 0);
   const description = String(formData.get("description") ?? "").trim();
   const isPublished = formData.get("isPublished") === "on";
+
+  const badgeRaw = String(formData.get("badge") ?? "");
+  const badge = BADGES.includes(badgeRaw as Badge) ? (badgeRaw as Badge) : null;
+  const badgeLabelRaw = String(formData.get("badgeLabel") ?? "").trim();
 
   if (!name) throw new Error("El nombre es obligatorio.");
   if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number])) {
     throw new Error("Elige una categoría válida.");
   }
-  if (!Number.isFinite(priceMin) || !Number.isFinite(priceMax) || priceMin < 0 || priceMax < 0) {
-    throw new Error("Los precios deben ser números válidos.");
-  }
-  if (priceMin > priceMax) {
-    throw new Error("El precio mínimo no puede ser mayor que el máximo.");
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error("El precio debe ser un número válido.");
   }
   if (!Number.isFinite(stockQty) || stockQty < 0) {
     throw new Error("El stock debe ser un número válido.");
   }
+  if (badge === "otro" && !badgeLabelRaw) {
+    throw new Error('Escribe el texto de la etiqueta "Otro".');
+  }
 
-  return { name, category, colors, stockQty, priceMin, priceMax, description, isPublished };
+  return {
+    name,
+    category,
+    colors,
+    stockQty,
+    price,
+    description,
+    isPublished,
+    badge,
+    badgeLabel: badge === "otro" ? badgeLabelRaw : null,
+  };
 }
 
 async function uploadProductImages(
@@ -236,6 +257,21 @@ export async function moveImageAction(
     .update(productImages)
     .set({ sortOrder: current.sortOrder })
     .where(eq(productImages.id, neighbor.id));
+
+  revalidatePath("/");
+  revalidatePath(`/admin/productos/${productId}/editar`);
+}
+
+export async function setImageFitAction(
+  imageId: number,
+  productId: number,
+  fit: ImageFit
+): Promise<void> {
+  await requireAdminSession();
+
+  if (!IMAGE_FITS.includes(fit)) return;
+
+  await db.update(productImages).set({ fit }).where(eq(productImages.id, imageId));
 
   revalidatePath("/");
   revalidatePath(`/admin/productos/${productId}/editar`);

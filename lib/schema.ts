@@ -18,6 +18,14 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+export const BADGES = ["liquidacion", "nuevo", "otro"] as const;
+
+export type Badge = (typeof BADGES)[number];
+
+export const IMAGE_FITS = ["cover", "contain"] as const;
+
+export type ImageFit = (typeof IMAGE_FITS)[number];
+
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   slug: varchar("slug", { length: 200 }).notNull().unique(),
@@ -25,8 +33,9 @@ export const products = pgTable("products", {
   category: varchar("category", { length: 40 }).notNull(),
   colors: text("colors").notNull().default(""),
   stockQty: integer("stock_qty").notNull().default(0),
-  priceMin: integer("price_min").notNull(),
-  priceMax: integer("price_max").notNull(),
+  price: integer("price").notNull(),
+  badge: varchar("badge", { length: 20 }),
+  badgeLabel: varchar("badge_label", { length: 60 }),
   description: text("description").notNull().default(""),
   isPublished: boolean("is_published").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -41,6 +50,7 @@ export const productImages = pgTable("product_images", {
     .references(() => products.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
+  fit: varchar("fit", { length: 10 }).notNull().default("cover"),
 });
 
 export type Product = typeof products.$inferSelect;

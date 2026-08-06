@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { put } from "@vercel/blob";
@@ -66,12 +68,11 @@ function parseOldCatalog(html: string): OldProduct[] {
   return items;
 }
 
-function parsePriceRange(priceText: string): { min: number; max: number } {
+function parsePrice(priceText: string): number {
+  // El catálogo viejo mostraba un rango ("S/ 12 – 18"); nos quedamos con el
+  // extremo inferior como precio único de partida.
   const numbers = priceText.match(/\d+/g)?.map(Number) ?? [0];
-  return {
-    min: numbers[0] ?? 0,
-    max: numbers[numbers.length - 1] ?? numbers[0] ?? 0,
-  };
+  return numbers[0] ?? 0;
 }
 
 function parseStockQty(qtyText: string): number {
@@ -94,7 +95,7 @@ async function main() {
   console.log(`Se encontraron ${items.length} productos en el HTML original.`);
 
   for (const [index, item] of items.entries()) {
-    const { min, max } = parsePriceRange(item.priceText);
+    const price = parsePrice(item.priceText);
     const stockQty = parseStockQty(item.qtyText);
     const slug = await uniqueSlug(item.name);
 
@@ -106,8 +107,7 @@ async function main() {
         category: item.category,
         colors: item.colors,
         stockQty,
-        priceMin: min,
-        priceMax: max,
+        price,
         description: item.description,
         isPublished: true,
         sortOrder: index,

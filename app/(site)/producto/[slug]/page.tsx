@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/data";
 import { CATEGORY_LABELS } from "@/components/category-labels";
+import { badgeColorClass, badgeDisplayText } from "@/components/badge-labels";
 import Gallery from "@/components/Gallery";
 import SelectButton from "@/components/SelectButton";
 import { singleProductMessage, whatsappLink } from "@/lib/whatsapp";
@@ -43,10 +44,7 @@ export default async function ProductPage({
   if (!product || !product.isPublished) notFound();
 
   const lowStock = product.stockQty > 0 && product.stockQty <= 2;
-  const priceLabel =
-    product.priceMin === product.priceMax
-      ? `S/ ${product.priceMin}`
-      : `S/ ${product.priceMin} – ${product.priceMax}`;
+  const badgeText = badgeDisplayText(product.badge, product.badgeLabel);
   const waLink = whatsappLink(singleProductMessage(product.name, product.colors));
 
   return (
@@ -66,14 +64,23 @@ export default async function ProductPage({
           </span>
           <h1 className="font-display text-3xl font-bold">{product.name}</h1>
 
-          {lowStock && (
-            <p className="mt-2 inline-block rounded-full bg-[var(--coral)] px-3 py-1 text-xs font-bold text-white">
-              ¡Últimas unidades!
-            </p>
-          )}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {badgeText && (
+              <span
+                className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${badgeColorClass(product.badge)}`}
+              >
+                {badgeText}
+              </span>
+            )}
+            {lowStock && (
+              <span className="inline-block rounded-full bg-[var(--coral)] px-3 py-1 text-xs font-bold text-white">
+                ¡Últimas unidades!
+              </span>
+            )}
+          </div>
 
           <p className="mt-3 font-mono text-2xl font-bold text-[var(--coral)]">
-            {priceLabel}
+            S/ {product.price}
           </p>
 
           <dl className="mt-4 divide-y divide-dashed divide-[var(--line)] border-y border-dashed border-[var(--line)] text-sm">

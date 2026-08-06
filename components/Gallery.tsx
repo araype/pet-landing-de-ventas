@@ -25,14 +25,16 @@ export default function Gallery({
 
   return (
     <div>
-      <div className="aspect-square overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+      <div className="aspect-square overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper-2)]">
         <Image
           src={current.url}
           alt={name}
           width={640}
           height={640}
           priority
-          className="h-full w-full object-cover"
+          className={`h-full w-full ${
+            current.fit === "contain" ? "object-contain" : "object-cover"
+          }`}
         />
       </div>
       {images.length > 1 && (
