@@ -1,15 +1,26 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { productImages, products, type Product, type ProductImage } from "./schema";
+import {
+  productColors,
+  productImages,
+  products,
+  type Product,
+  type ProductColor,
+  type ProductImage,
+} from "./schema";
 
-export type ProductWithImages = Product & { images: ProductImage[] };
+export type ProductWithImages = Product & {
+  images: ProductImage[];
+  colors: ProductColor[];
+};
 
-async function attachImages(rows: Product[]): Promise<ProductWithImages[]> {
+async function attachRelations(rows: Product[]): Promise<ProductWithImages[]> {
   if (rows.length === 0) return [];
   // Catalog is small (tens of products), so a per-product lookup is simple and fast enough.
-  const byProduct = new Map<number, ProductImage[]>();
+  const imagesByProduct = new Map<number, ProductImage[]>();
+  const colorsByProduct = new Map<number, ProductColor[]>();
   for (const row of rows) {
-    byProduct.set(
+    imagesByProduct.set(
       row.id,
       await db
         .select()
@@ -17,8 +28,20 @@ async function attachImages(rows: Product[]): Promise<ProductWithImages[]> {
         .where(eq(productImages.productId, row.id))
         .orderBy(asc(productImages.sortOrder))
     );
+    colorsByProduct.set(
+      row.id,
+      await db
+        .select()
+        .from(productColors)
+        .where(eq(productColors.productId, row.id))
+        .orderBy(asc(productColors.sortOrder))
+    );
   }
-  return rows.map((r) => ({ ...r, images: byProduct.get(r.id) ?? [] }));
+  return rows.map((r) => ({
+    ...r,
+    images: imagesByProduct.get(r.id) ?? [],
+    colors: colorsByProduct.get(r.id) ?? [],
+  }));
 }
 
 export async function getPublishedProducts(): Promise<ProductWithImages[]> {
@@ -27,7 +50,7 @@ export async function getPublishedProducts(): Promise<ProductWithImages[]> {
     .from(products)
     .where(eq(products.isPublished, true))
     .orderBy(asc(products.sortOrder), desc(products.createdAt));
-  return attachImages(rows);
+  return attachRelations(rows);
 }
 
 export async function getProductBySlug(
@@ -39,7 +62,7 @@ export async function getProductBySlug(
     .where(eq(products.slug, slug))
     .limit(1);
   if (rows.length === 0) return null;
-  const [withImages] = await attachImages(rows);
+  const [withImages] = await attachRelations(rows);
   return withImages;
 }
 
@@ -48,7 +71,7 @@ export async function getAllProductsForAdmin(): Promise<ProductWithImages[]> {
     .select()
     .from(products)
     .orderBy(asc(products.sortOrder), desc(products.createdAt));
-  return attachImages(rows);
+  return attachRelations(rows);
 }
 
 export async function getProductByIdForAdmin(
@@ -56,7 +79,7 @@ export async function getProductByIdForAdmin(
 ): Promise<ProductWithImages | null> {
   const rows = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (rows.length === 0) return null;
-  const [withImages] = await attachImages(rows);
+  const [withImages] = await attachRelations(rows);
   return withImages;
 }
 

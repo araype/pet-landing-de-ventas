@@ -3,7 +3,9 @@
 import { useActionState, useState } from "react";
 import { BADGES, CATEGORIES } from "@/lib/schema";
 import type { FormState } from "@/app/admin/actions";
+import type { ColorOption } from "@/lib/colors";
 import { BADGE_LABELS } from "./badge-labels";
+import ColorPicker from "./ColorPicker";
 
 const CATEGORY_LABELS: Record<string, string> = {
   juguetes: "Juguetes",
@@ -16,7 +18,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 type Defaults = {
   name: string;
   category: string;
-  colors: string;
+  colors: ColorOption[];
   stockQty: number;
   price: number;
   description: string;
@@ -28,7 +30,7 @@ type Defaults = {
 const emptyDefaults: Defaults = {
   name: "",
   category: "juguetes",
-  colors: "",
+  colors: [],
   stockQty: 1,
   price: 0,
   description: "",
@@ -83,16 +85,6 @@ export default function ProductForm({
           </select>
         </Field>
 
-        <Field label="Colores / variantes" htmlFor="colors">
-          <input
-            id="colors"
-            name="colors"
-            placeholder="Ej: Rojo, verde limón"
-            defaultValue={values.colors}
-            className={inputClass}
-          />
-        </Field>
-
         <Field label="Stock (unidades disponibles)" htmlFor="stockQty">
           <input
             id="stockQty"
@@ -143,6 +135,10 @@ export default function ProductForm({
           )}
         </Field>
       </div>
+
+      <Field label="Colores disponibles" htmlFor="colorsJson">
+        <ColorPicker name="colorsJson" defaultColors={values.colors} />
+      </Field>
 
       <Field label="Descripción" htmlFor="description">
         <textarea

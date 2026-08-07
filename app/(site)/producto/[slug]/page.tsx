@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/data";
 import { CATEGORY_LABELS } from "@/components/category-labels";
 import { badgeColorClass, badgeDisplayText } from "@/components/badge-labels";
+import ColorSwatches from "@/components/ColorSwatches";
 import Gallery from "@/components/Gallery";
 import SelectButton from "@/components/SelectButton";
 import { singleProductMessage, whatsappLink } from "@/lib/whatsapp";
@@ -45,7 +46,8 @@ export default async function ProductPage({
 
   const lowStock = product.stockQty > 0 && product.stockQty <= 2;
   const badgeText = badgeDisplayText(product.badge, product.badgeLabel);
-  const waLink = whatsappLink(singleProductMessage(product.name, product.colors));
+  const colorNames = product.colors.map((c) => c.name);
+  const waLink = whatsappLink(singleProductMessage(product.name, colorNames));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -84,8 +86,14 @@ export default async function ProductPage({
           </p>
 
           <dl className="mt-4 divide-y divide-dashed divide-[var(--line)] border-y border-dashed border-[var(--line)] text-sm">
-            <Row label="Colores" value={product.colors || "—"} />
-            <Row label="Stock" value={`${product.stockQty} unidades`} />
+            <Row label="Colores">
+              {product.colors.length > 0 ? (
+                <ColorSwatches colors={product.colors} />
+              ) : (
+                "—"
+              )}
+            </Row>
+            <Row label="Stock">{product.stockQty} unidades</Row>
           </dl>
 
           {product.description && (
@@ -108,7 +116,7 @@ export default async function ProductPage({
                 id: product.id,
                 slug: product.slug,
                 name: product.name,
-                colors: product.colors,
+                colors: colorNames,
               }}
               className="w-full py-3"
             />
@@ -119,13 +127,13 @@ export default async function ProductPage({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 py-2">
+    <div className="flex items-center gap-3 py-2">
       <dt className="w-24 shrink-0 font-mono text-xs uppercase tracking-wide text-[var(--ink)]/50">
         {label}
       </dt>
-      <dd>{value}</dd>
+      <dd>{children}</dd>
     </div>
   );
 }

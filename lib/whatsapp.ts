@@ -4,16 +4,16 @@ export function whatsappLink(message: string): string {
   return `https://wa.me/${PHONE}?text=${encodeURIComponent(message)}`;
 }
 
-export function singleProductMessage(name: string, colors: string): string {
-  const detail = colors ? ` (${colors})` : "";
+export function singleProductMessage(name: string, colors: string[]): string {
+  const detail = colors.length ? ` (${colors.join(", ")})` : "";
   return `Hola Aracely, quisiera consultar por: ${name}${detail}`;
 }
 
 export function multiProductMessage(
-  items: { name: string; colors: string }[]
+  items: { name: string; colors: string[] }[]
 ): string {
   const lines = items.map(
-    (item) => `- ${item.name}${item.colors ? ` (${item.colors})` : ""}`
+    (item) => `- ${item.name}${item.colors.length ? ` (${item.colors.join(", ")})` : ""}`
   );
   return `Hola Aracely, quisiera consultar por:\n${lines.join("\n")}`;
 }

@@ -31,7 +31,6 @@ export const products = pgTable("products", {
   slug: varchar("slug", { length: 200 }).notNull().unique(),
   name: varchar("name", { length: 200 }).notNull(),
   category: varchar("category", { length: 40 }).notNull(),
-  colors: text("colors").notNull().default(""),
   stockQty: integer("stock_qty").notNull().default(0),
   price: integer("price").notNull(),
   badge: varchar("badge", { length: 20 }),
@@ -53,6 +52,17 @@ export const productImages = pgTable("product_images", {
   fit: varchar("fit", { length: 10 }).notNull().default("cover"),
 });
 
+export const productColors = pgTable("product_colors", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 60 }).notNull(),
+  hex: varchar("hex", { length: 10 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type ProductImage = typeof productImages.$inferSelect;
+export type ProductColor = typeof productColors.$inferSelect;

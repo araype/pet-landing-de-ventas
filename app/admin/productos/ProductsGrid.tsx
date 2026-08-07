@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ProductWithImages } from "@/lib/data";
 import { CATEGORY_LABELS } from "@/components/category-labels";
 import { badgeColorClass, badgeDisplayText } from "@/components/badge-labels";
+import ColorSwatches from "@/components/ColorSwatches";
 import { deleteProductAction } from "../actions";
 
 export default function ProductsGrid({
@@ -102,10 +103,8 @@ function ProductAdminCard({ product }: { product: ProductWithImages }) {
         <h3 className="font-display text-base font-semibold leading-tight">
           {product.name}
         </h3>
-        <p className="mt-1 text-sm text-[var(--ink)]/60">
-          {product.colors ? `${product.colors} · ` : ""}
-          {product.stockQty} unid.
-        </p>
+        <p className="mt-1 text-sm text-[var(--ink)]/60">{product.stockQty} unid.</p>
+        <ColorSwatches colors={product.colors} className="mt-1" />
         {product.description && (
           <p className="mt-2 line-clamp-3 text-sm text-[var(--ink)]/70">
             {product.description}

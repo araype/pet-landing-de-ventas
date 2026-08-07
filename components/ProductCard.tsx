@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ProductWithImages } from "@/lib/data";
 import { CATEGORY_LABELS } from "./category-labels";
 import { badgeColorClass, badgeDisplayText } from "./badge-labels";
+import ColorSwatches from "./ColorSwatches";
 import SelectButton from "./SelectButton";
 
 export default function ProductCard({ product }: { product: ProductWithImages }) {
@@ -51,10 +52,8 @@ export default function ProductCard({ product }: { product: ProductWithImages })
           <h3 className="font-display text-base font-semibold leading-tight">
             {product.name}
           </h3>
-          <p className="mb-2 text-sm text-[var(--ink)]/60">
-            {product.colors ? `${product.colors} · ` : ""}
-            {product.stockQty} unid.
-          </p>
+          <p className="mb-1 text-sm text-[var(--ink)]/60">{product.stockQty} unid.</p>
+          <ColorSwatches colors={product.colors} className="mb-2" />
           <p className="font-mono text-sm font-bold text-[var(--coral)]">S/ {product.price}</p>
         </div>
       </Link>
@@ -64,7 +63,7 @@ export default function ProductCard({ product }: { product: ProductWithImages })
             id: product.id,
             slug: product.slug,
             name: product.name,
-            colors: product.colors,
+            colors: product.colors.map((c) => c.name),
           }}
           className="w-full"
         />

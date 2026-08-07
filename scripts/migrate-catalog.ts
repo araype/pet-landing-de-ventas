@@ -5,8 +5,9 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { put } from "@vercel/blob";
 import { db } from "../lib/db";
-import { productImages, products, type Category } from "../lib/schema";
+import { productColors, productImages, products, type Category } from "../lib/schema";
 import { uniqueSlug } from "../lib/data";
+import { PRESET_COLORS } from "../lib/colors";
 
 const SOURCE_HTML = resolve(
   __dirname,
@@ -80,6 +81,44 @@ function parseStockQty(qtyText: string): number {
   return match ? Number(match[0]) : 1;
 }
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function parseColors(text: string): { name: string; hex: string }[] {
+  if (!text) return [];
+  const cleaned = text.replace(/\by\b/gi, ",").replace(/[/·]/g, ",");
+  const tokens = cleaned.split(",").map((t) => t.trim()).filter(Boolean);
+
+  const result: { name: string; hex: string }[] = [];
+  const seen = new Set<string>();
+
+  for (const token of tokens) {
+    const lower = token.toLowerCase();
+    if (/\d/.test(lower)) continue;
+    if (
+      /talla|unid|set|combinacion|surtido|con tachas|^liso$|dije|cuero|tendon|tendón|natural/.test(
+        lower
+      )
+    )
+      continue;
+
+    let matched = PRESET_COLORS.find(
+      (p) => lower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(lower)
+    );
+    if (!matched && lower.includes("camuflad")) {
+      matched = { name: "Camuflado", hex: "#6b7057" };
+    }
+
+    const finalName = matched ? matched.name : capitalize(token);
+    if (seen.has(finalName)) continue;
+    seen.add(finalName);
+    result.push({ name: finalName, hex: matched ? matched.hex : "#9ca3af" });
+  }
+
+  return result;
+}
+
 function decodeDataUri(dataUri: string): { buffer: Buffer; contentType: string; ext: string } {
   const match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error("Formato de imagen base64 inesperado.");
@@ -105,7 +144,6 @@ async function main() {
         slug,
         name: item.name,
         category: item.category,
-        colors: item.colors,
         stockQty,
         price,
         description: item.description,
@@ -113,6 +151,18 @@ async function main() {
         sortOrder: index,
       })
       .returning({ id: products.id });
+
+    const colors = parseColors(item.colors);
+    if (colors.length > 0) {
+      await db.insert(productColors).values(
+        colors.map((c, i) => ({
+          productId: created.id,
+          name: c.name,
+          hex: c.hex,
+          sortOrder: i,
+        }))
+      );
+    }
 
     const { buffer, contentType, ext } = decodeDataUri(item.imageDataUri);
     const blob = await put(`productos/${slug}/${Date.now()}-foto.${ext}`, buffer, {

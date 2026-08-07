@@ -11,7 +11,7 @@ export type SelectedItem = {
   id: number;
   slug: string;
   name: string;
-  colors: string;
+  colors: string[];
 };
 
 const STORAGE_KEY = "bazar-aracely-selection";

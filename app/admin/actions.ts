@@ -9,6 +9,7 @@ import {
   BADGES,
   CATEGORIES,
   IMAGE_FITS,
+  productColors,
   productImages,
   products,
   type Badge,
@@ -43,10 +44,50 @@ export async function logoutAction(): Promise<void> {
   redirect("/admin/login");
 }
 
+function parseColors(formData: FormData): { name: string; hex: string }[] {
+  const raw = String(formData.get("colorsJson") ?? "[]");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  const seen = new Set<string>();
+  const result: { name: string; hex: string }[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== "object") continue;
+    const name = String((item as { name?: unknown }).name ?? "").trim();
+    const hex = String((item as { hex?: unknown }).hex ?? "").trim();
+    if (!name || !hex) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ name, hex });
+  }
+  return result;
+}
+
+async function syncProductColors(
+  productId: number,
+  colors: { name: string; hex: string }[]
+): Promise<void> {
+  await db.delete(productColors).where(eq(productColors.productId, productId));
+  if (colors.length === 0) return;
+  await db.insert(productColors).values(
+    colors.map((c, index) => ({
+      productId,
+      name: c.name,
+      hex: c.hex,
+      sortOrder: index,
+    }))
+  );
+}
+
 function parseProductFields(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const category = String(formData.get("category") ?? "");
-  const colors = String(formData.get("colors") ?? "").trim();
   const stockQty = Number(formData.get("stockQty") ?? 0);
   const price = Number(formData.get("price") ?? 0);
   const description = String(formData.get("description") ?? "").trim();
@@ -73,7 +114,6 @@ function parseProductFields(formData: FormData) {
   return {
     name,
     category,
-    colors,
     stockQty,
     price,
     description,
@@ -124,6 +164,7 @@ export async function createProductAction(
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Datos inválidos." };
   }
+  const colors = parseColors(formData);
 
   const slug = await uniqueSlug(fields.name);
 
@@ -131,6 +172,8 @@ export async function createProductAction(
     .insert(products)
     .values({ ...fields, slug })
     .returning({ id: products.id });
+
+  await syncProductColors(created.id, colors);
 
   const files = formData.getAll("images").filter((v): v is File => v instanceof File);
   await uploadProductImages(slug, created.id, files);
@@ -153,6 +196,7 @@ export async function updateProductAction(
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Datos inválidos." };
   }
+  const colors = parseColors(formData);
 
   const current = await db
     .select({ slug: products.slug })
@@ -169,6 +213,8 @@ export async function updateProductAction(
     .update(products)
     .set({ ...fields, slug, updatedAt: new Date() })
     .where(eq(products.id, productId));
+
+  await syncProductColors(productId, colors);
 
   const files = formData.getAll("images").filter((v): v is File => v instanceof File);
   await uploadProductImages(slug, productId, files);
