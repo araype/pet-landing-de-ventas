@@ -14,7 +14,9 @@ export type SelectedItem = {
   colors: string[];
 };
 
-const STORAGE_KEY = "bazar-aracely-selection";
+// v2: "colors" pasó de string a string[]. La clave cambió a propósito para
+// que cualquier selección guardada con la forma vieja se descarte sola.
+const STORAGE_KEY = "bazar-aracely-selection-v2";
 const EMPTY: SelectedItem[] = [];
 
 type Listener = () => void;
@@ -22,7 +24,15 @@ type Listener = () => void;
 function readFromStorage(): SelectedItem[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is SelectedItem =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as SelectedItem).id === "number" &&
+        Array.isArray((item as SelectedItem).colors)
+    );
   } catch {
     return [];
   }
